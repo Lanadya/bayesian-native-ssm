@@ -50,9 +50,9 @@ eval = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/lanadya/bayesian-native-ssm"
-Repository = "https://github.com/lanadya/bayesian-native-ssm"
-Issues = "https://github.com/lanadya/bayesian-native-ssm/issues"
+Homepage = "https://github.com/Lanadya/bayesian-native-ssm"
+Repository = "https://github.com/Lanadya/bayesian-native-ssm"
+Issues = "https://github.com/Lanadya/bayesian-native-ssm/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bayesian_native_ssm"]
