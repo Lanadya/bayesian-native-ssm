@@ -1,12 +1,17 @@
-# Copyright 2026 Posterior Labs
+# Copyright 2026 ARQON GmbH (in formation)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #     http://www.apache.org/licenses/LICENSE-2.0
-"""Internal trust diagnostics: calibration ECE and worst-group accuracy.
+"""Internal Credence-State diagnostics: calibration ECE and worst-group
+accuracy.
+
+Module file name is retained as ``trust_diagnostics.py`` for interface
+stability; in v5 terminology these are Credence-State / reliability-
+event diagnostics.
 
 These are *real* implementations — the eval-pipeline glue and the
-LAB_DEMO notebooks both consume them. The benchmark wrappers in
+toy-demonstration notebook both consume them. The benchmark wrappers in
 ``benchmarks.py`` are stubs; the metrics here are not.
 """
 
@@ -64,9 +69,8 @@ def worst_group_accuracy(
 ) -> Tensor:
     """Worst-group accuracy — minimum per-group accuracy across sub-populations.
 
-    Directly relevant to LAB_REDTECH Killshot 3 mitigation: this is the
-    diagnostic that surfaces sub-population drift the Bühlmann weighting
-    is supposed to suppress.
+    The diagnostic that surfaces sub-population drift the Bühlmann-Straub
+    credibility weighting is intended to suppress.
 
     Args:
         correct: 0/1 tensor of shape ``(N,)``.

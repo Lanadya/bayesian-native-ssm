@@ -1,4 +1,4 @@
-# Copyright 2026 Posterior Labs
+# Copyright 2026 ARQON GmbH (in formation)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -45,21 +45,27 @@ class MambaBackboneConfig:
 class MambaTrustWrapper(nn.Module):
     """Wrap a Mamba backbone and propagate h̃_t = (h_t, τ_t).
 
+    Code name retained as ``MambaTrustWrapper`` for interface stability;
+    in v5 terminology this propagates ``(h_t, c_t)`` with the
+    Credence-State slot ``c_t``.
+
     The wrapper exposes two extension points that the upstream Mamba does
     not natively have:
 
-    1. A ``trust_state`` slot of dimension ``d_τ`` that travels alongside
-       ``h_t`` through the selective scan (see :class:`AugmentedTrustState`).
-    2. A ``trust_signals`` head per AEGIS dimension that reads from the
-       last layer's hidden state and produces the per-dimension signal
-       ``s_j(θ, x)`` consumed by ``trust_posterior_loss``.
+    1. A Credence-State slot of dimension ``d_c`` (code: ``d_τ``) that
+       travels alongside ``h_t`` through the selective scan (see
+       :class:`AugmentedTrustState`).
+    2. A reliability-signals head per reliability dimension (code:
+       ``trust_signals`` / ``trust_dimension_names``) that reads from
+       the last layer's hidden state and produces the per-dimension
+       signal consumed by ``trust_posterior_loss``.
 
     Stage-1 implementation tasks:
 
-    - Pick the modification point in the selective-scan kernel (``A``,
-      ``B``, ``C`` matrices conditional on ``τ_t``) — open research
-      question, see ``ARCHITECTURE.md``.
-    - Decide whether ``τ_t`` is updated inside the scan or by a
+    - Pick the modification point in the selective-scan kernel
+      (input-dependent selective parameters conditioned on ``(x_t, c_t)``)
+      — open research question, see ``ARCHITECTURE.md``.
+    - Decide whether ``c_t`` is updated inside the scan or by a
       post-layer hook — depends on whether mamba-ssm's scan kernel can
       be extended without forking the kernel.
     - Write the corresponding CUDA / Triton paths if the answer is
@@ -78,7 +84,7 @@ class MambaTrustWrapper(nn.Module):
         self.trust_dimension_names = list(trust_dimension_names)
 
         # Sanity-check the dimensions match. The upstream Mamba enforces
-        # d_model itself; here we just guard the trust slot.
+        # d_model itself; here we just guard the Credence-State slot.
         if trust_state_config.hidden_dim != backbone_config.d_model:
             raise ValueError(
                 f"TrustStateConfig.hidden_dim ({trust_state_config.hidden_dim}) "
@@ -100,15 +106,16 @@ class MambaTrustWrapper(nn.Module):
 
         Args:
             input_ids: Long tensor of shape ``(B, T)``.
-            trust_signals: Optional external trust signals injected at
-                step ``t`` (e.g. from an oracle during teacher-forcing of
-                trust trajectories).
+            trust_signals: Optional external reliability signals injected
+                at step ``t`` (e.g. from an oracle during teacher-forcing
+                of reliability-event trajectories).
 
         Returns:
             Stage-1 contract: dict with keys ``"logits"`` of shape
-            ``(B, T, V)``, ``"trust_signals"`` (mapping dimension name to
-            ``(B, T)`` tensor of signal values), and ``"tau_trajectory"``
-            of shape ``(B, T, d_τ)``.
+            ``(B, T, V)``, ``"trust_signals"`` (mapping reliability-
+            dimension name to ``(B, T)`` tensor of signal values), and
+            ``"tau_trajectory"`` of shape ``(B, T, d_c)`` (the
+            Credence-State trajectory).
 
         Raises:
             NotImplementedError: always. Integration with ``mamba-ssm`` is
@@ -118,5 +125,6 @@ class MambaTrustWrapper(nn.Module):
             "MambaTrustWrapper.forward is Stage-1 implementation work: "
             "integration with the mamba-ssm selective-scan kernel is "
             "pending. See docs/ARCHITECTURE.md for the design and the "
-            "open research question on selective-gating on τ_t."
+            "open research question on selective-parameter conditioning "
+            "on the Credence-State slot."
         )

@@ -1,4 +1,4 @@
-# Copyright 2026 Posterior Labs
+# Copyright 2026 ARQON GmbH (in formation)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,8 +10,8 @@ Three concerns covered:
 - Likelihood correctness: Gauss matches ``scipy.stats.norm.logpdf``;
   Wasserstein and Huber are at minimum callable and produce sensible
   values under controlled inputs.
-- Trust-Posterior dimensional factorisation: L_trust = Σ_j λ_j L_j
-  aggregates correctly across AEGIS dimensions.
+- Per-dimension factorisation: L_trust = Σ_j λ_j L_j aggregates
+  correctly across reliability dimensions.
 - Likelihood-class dispatch: all three classes are wired through the
   trust_posterior_loss path.
 """
@@ -113,7 +113,7 @@ def test_huber_bounded_influence_on_outliers():
 
 
 # ---------------------------------------------------------------------------
-# Trust-Posterior dimensional factorisation
+# Per-dimension factorisation
 # ---------------------------------------------------------------------------
 
 def _make_minibatch(b=2, t=4, v=5, dims=("calibration", "honesty")):

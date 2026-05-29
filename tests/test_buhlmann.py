@@ -1,15 +1,17 @@
-# Copyright 2026 Posterior Labs
+# Copyright 2026 ARQON GmbH (in formation)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #     http://www.apache.org/licenses/LICENSE-2.0
 """Unit tests for the Bühlmann-Straub credibility weighting module.
 
-Two of the tests are load-bearing for memory ``buhlmann_straub_formel``:
+Two of the tests are load-bearing:
 
 - ``test_buhlmann_z_correct_form`` pins the **exposure form**
-  ``Z = w / (w + k)`` and demonstrates explicit divergence from the
-  counting form ``Z = N / (N + k)``.
+  ``Z = w / (w + k)`` (Straub 1970) and demonstrates explicit
+  divergence from the counting form ``Z = N / (N + k)`` (Bühlmann 1967).
+  The distinction matters: the counting form is a narrower special
+  case under uniform exposure.
 
 - ``test_buhlmann_z_long_tail_pulling`` shows the rare-subgroup
   regularisation behaviour that motivates the choice over a flat mean.

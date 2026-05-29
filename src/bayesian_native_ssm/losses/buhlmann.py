@@ -1,4 +1,4 @@
-# Copyright 2026 Posterior Labs
+# Copyright 2026 ARQON GmbH (in formation)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -6,8 +6,8 @@
 """Bühlmann-Straub credibility weighting.
 
 Reference: Bühlmann & Straub, "Glaubwürdigkeit für Schadensätze",
-Mitteilungen der Vereinigung Schweizerischer Versicherungsmathematiker,
-1970.
+Mitteilungen der Vereinigung Schweizerischer Versicherungsmathematiker
+70 (1970), 111-133.
 
 This module implements the **exposure form**
 
@@ -19,10 +19,11 @@ narrower special case (uniform exposure). The distinction is
 load-bearing for sub-population credibility weighting in ML training
 and is enforced by ``tests/test_buhlmann.py::test_buhlmann_z_correct_form``.
 
-See ``LAB_THEORY_mathematik.md`` §2 for the derivation and the honest
-disclaimer about transferring the variance-optimality result from the
-linear-class setting to over-parametrised neural networks (heuristic,
-not theorem).
+In the Credence-State Foundation Models architecture (SPRIND submission
+May 2026) this weighting enters ``L_update`` as a shrinkage-style update
+prior. The variance-optimality result holds in the original linear-class
+setting; transferring it to over-parametrised neural networks is
+treated as a heuristic, not as a theorem.
 """
 
 from __future__ import annotations

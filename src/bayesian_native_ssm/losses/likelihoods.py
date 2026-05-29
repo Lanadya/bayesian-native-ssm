@@ -1,35 +1,41 @@
-# Copyright 2026 Posterior Labs
+# Copyright 2026 ARQON GmbH (in formation)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #     http://www.apache.org/licenses/LICENSE-2.0
-"""Concrete likelihood classes for P(T_j | s_j(θ)).
+"""Concrete likelihood classes for the per-reliability-dimension
+observation model P(target_j | signal_j(θ)).
 
-Three classes, one per LAB_THEORY v2 Task 1 slot:
+Three classes, callable on a per-reliability-dimension basis:
 
 - ``gauss_likelihood``       — negative log-likelihood of a Gaussian.
-                                Baseline. Operationally equivalent to MSE,
-                                which is precisely why LAB_REDTECH Killshot 1
-                                flagged it: a Gauss-only choice collapses the
-                                structural difference to RLHF. The Wasserstein
-                                and Huber alternatives below exist to widen the
-                                class genuinely.
+                                Baseline. Operationally equivalent to MSE;
+                                a Gauss-only choice would collapse the
+                                structural difference to MSE-RLHF, so the
+                                Wasserstein and Huber alternatives below
+                                exist to widen the likelihood class
+                                genuinely.
 
 - ``wasserstein_likelihood`` — squared W_2 distance between two
                                 distributions, Sinkhorn-regularised. Use when
-                                the trust signal is a distribution (e.g. a
-                                response distribution over multiple sampled
-                                rollouts) rather than a point estimate. Avoids
-                                the mode-collapse failure mode of Gauss-NLL
-                                when signal and target are both distributions.
+                                the reliability signal is a distribution
+                                (e.g. a response distribution over multiple
+                                sampled rollouts) rather than a point
+                                estimate. Avoids the mode-collapse failure
+                                mode of Gauss-NLL when signal and target are
+                                both distributions.
 
 - ``huber_likelihood``       — Huber M-estimator. Adversarial-resistant:
                                 heavy-tailed contamination (a single drift
                                 rollout) has bounded influence, unlike Gauss
                                 where one outlier dominates the gradient.
 
-If LAB_THEORY v2 ships a fourth class (e.g. categorical / Dirichlet for
-discrete trust dimensions) it slots in here without touching callers.
+A fourth class (e.g. categorical / Dirichlet / Beta for bounded or
+ordinal reliability variables) slots in here without touching callers.
+The architectural claim is not tied to a Gaussian assumption — it is
+tied to causal state-conditioning; bounded / ordinal likelihood families
+for sources, sufficiency and conflict are an ablated Stage-1 design
+choice.
 """
 
 from __future__ import annotations

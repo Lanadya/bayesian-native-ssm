@@ -1,12 +1,12 @@
-# Copyright 2026 Posterior Labs
+# Copyright 2026 ARQON GmbH (in formation)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #     http://www.apache.org/licenses/LICENSE-2.0
 """Pydantic schema for the YAML training configuration.
 
-Single Pydantic file, no abstract-class hierarchies — Anker 4 in the
-LAB_REPO brief ("Lesbar in <30 Minuten"). The schema captures *what* a
+Single Pydantic file, no abstract-class hierarchies — the schema is
+deliberately readable in under 30 minutes. It captures *what* a
 Stage-1 trainer must know, not *how* it must be built.
 """
 
@@ -22,9 +22,12 @@ LikelihoodClass = Literal["gauss", "wasserstein", "huber"]
 
 
 class LikelihoodSpec(BaseModel):
-    """Per-AEGIS-dimension likelihood choice and its hyperparameters."""
+    """Per-reliability-dimension likelihood choice and its hyperparameters."""
 
-    name: str = Field(..., description="AEGIS dimension name, e.g. 'calibration'.")
+    name: str = Field(
+        ...,
+        description="Reliability-dimension name (e.g. 'uncertainty', 'reliability', 'sufficiency', 'conflict').",
+    )
     likelihood_class: LikelihoodClass = "gauss"
     lambda_weight: float = Field(1.0, gt=0.0, description="Dimension weight λ_j.")
     sigma: float | None = Field(None, gt=0.0, description="Gauss σ; required if class='gauss'.")
@@ -50,7 +53,11 @@ class BackboneSpec(BaseModel):
     d_model: int = Field(768, gt=0)
     n_layer: int = Field(24, gt=0)
     vocab_size: int = Field(50_257, gt=0)
-    trust_dim: int = Field(16, gt=0, description="Size d_τ of the trust slot.")
+    trust_dim: int = Field(
+        16,
+        gt=0,
+        description="Size d_c (legacy: d_τ) of the Credence-State slot.",
+    )
 
 
 class TrainingSpec(BaseModel):
@@ -81,7 +88,7 @@ class ExperimentConfig(BaseModel):
         names = [spec.name for spec in v]
         if len(names) != len(set(names)):
             duplicates = {n for n in names if names.count(n) > 1}
-            raise ValueError(f"Duplicate AEGIS dimension names: {sorted(duplicates)}.")
+            raise ValueError(f"Duplicate reliability-dimension names: {sorted(duplicates)}.")
         return v
 
     @classmethod

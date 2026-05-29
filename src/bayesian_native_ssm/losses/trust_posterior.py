@@ -1,34 +1,47 @@
-# Copyright 2026 Posterior Labs
+# Copyright 2026 ARQON GmbH (in formation)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #     http://www.apache.org/licenses/LICENSE-2.0
-"""Trust-Posterior training loss.
+"""Credence-State training-loss assembly.
 
-Implements the negative-log-posterior decomposition from
-``LAB_THEORY_mathematik.md`` §1::
+Implements a three-component pre-Stage-1 decomposition of the
+negative-log-posterior::
 
     L(θ) = L_data(θ) + L_trust(θ) + L_prior(θ)
          = -log P(D | θ) - log P(T | θ) - log P(θ)
 
-Three components:
+This is the loss form the skeleton ships with. The companion SPRIND
+submission "Credence-State Foundation Models" describes the five-
+component v5 form
+
+    L = L_LM + λ_1 L_credence + λ_2 L_update + λ_3 L_action + λ_4 L_calibration
+
+with the migration ``L_data → L_LM`` and ``L_trust → L_credence + L_update``
+(L_credence carries the per-reliability-dimension likelihood mass,
+L_update carries the Bühlmann-Straub credibility shrinkage). Stage-1
+expands this skeleton into the five-component form and adds
+``L_action`` and ``L_calibration``.
+
+Three components in the skeleton:
 
 - **L_data**  — token cross-entropy on next-token prediction
-                (``-Σ_t log P_θ(y_t | y_<t, x)``). See §1.
+                (``-Σ_t log P_θ(y_t | y_<t, x)``).
 
-- **L_trust** — dimension-factorised trust log-likelihood
-                ``Σ_j λ_j L_j(θ)`` over the AEGIS trust tensor (§3), with
-                an optional Bühlmann-Straub credibility weighting across
-                sub-population contexts (§2).
+- **L_trust** — dimension-factorised reliability log-likelihood
+                ``Σ_j λ_j L_j(θ)`` over the reliability-variable index
+                ``j`` (in v5: a component of the Credence-State
+                ``c_t = (u_t, r_t, s_t, k_t)``), with an optional
+                Bühlmann-Straub credibility weighting across sub-
+                population contexts.
 
-- **L_prior** — Gaussian weight-decay prior, attached by the caller; we
-                expose a slot here so the bookkeeping is honest, but no
-                model parameters are owned at this layer.
+- **L_prior** — Gaussian weight-decay prior, attached by the caller;
+                we expose a slot here so the bookkeeping is honest, but
+                no model parameters are owned at this layer.
 
-LAB_REDTECH Killshot 1 ("Trust-Likelihood is nowhere defined") is
-answered by requiring the caller to pick a concrete likelihood class
-("gauss" | "wasserstein" | "huber") — see ``likelihoods.py``. There is
-no default that silently collapses to MSE.
+The likelihood class is a caller-required choice (``"gauss"`` |
+``"wasserstein"`` | ``"huber"``) — see ``likelihoods.py``. There is no
+default that silently collapses to MSE.
 """
 
 from __future__ import annotations
@@ -54,7 +67,7 @@ def _per_dimension_trust_loss(
     signal: Tensor,
     target: Tensor,
 ) -> Tensor:
-    """Dispatch to the chosen likelihood class for one AEGIS dimension.
+    """Dispatch to the chosen likelihood class for one reliability dimension.
 
     Hyperparameters of each likelihood (``sigma``, ``epsilon``, ``delta``)
     are pinned to neutral defaults here; the Stage-1 trainer will surface
@@ -91,24 +104,28 @@ def trust_posterior_loss(
         data_targets: Long tensor of shape ``(B, T)`` with target token
             ids. Indices below zero are treated as padding and ignored
             (standard ``ignore_index = -100`` convention).
-        trust_signals: Mapping from AEGIS dimension name ``j`` to the
-            model-derived signal tensor ``s_j(θ, x)`` for that dimension.
+        trust_signals: Mapping from reliability-dimension name ``j`` to
+            the model-derived signal tensor ``s_j(θ, x)`` for that
+            dimension. In the v5 frame, ``j`` indexes a component of the
+            Credence-State ``c_t = (u_t, r_t, s_t, k_t)`` —
+            uncertainty / source-reliability / evidential-sufficiency /
+            conflict.
         trust_targets: Mapping from the same dimension names ``j`` to the
-            externally-supplied trust target tensor ``τ_j`` (same shape
-            as the corresponding signal).
+            externally-supplied reliability-target tensor (same shape as
+            the corresponding signal).
         context_assignments: Optional long tensor of shape ``(B,)``
             assigning each batch element to a sub-population context
-            ``c ∈ {0, ..., C-1}``. When provided, the per-dimension trust
-            loss is Bühlmann-Straub-weighted across contexts (§2). When
-            ``None``, all samples are treated as one global context and
-            ``L_trust`` is the unweighted sum.
+            ``c ∈ {0, ..., C-1}``. When provided, the per-dimension
+            reliability loss is Bühlmann-Straub-weighted across contexts.
+            When ``None``, all samples are treated as one global context
+            and ``L_trust`` is the unweighted sum.
         likelihood_class: One of ``{"gauss", "wasserstein", "huber"}``.
-            Caller-required choice — no silent default that collapses the
-            theory to MSE-RLHF (LAB_REDTECH K1).
+            Caller-required choice — no silent default that would
+            collapse the per-dimension likelihood to MSE.
         buhlmann_k: Crossover constant ``k = σ²/τ²`` for the credibility
             factor. Ignored if ``context_assignments is None``.
-        lambdas: Mapping from AEGIS dimension name to its weight ``λ_j``
-            in the trust-tensor aggregation (§3). Defaults to uniform
+        lambdas: Mapping from reliability-dimension name to its weight
+            ``λ_j`` in the per-dimension aggregation. Defaults to uniform
             ``λ_j = 1.0`` per provided dimension. Unknown keys raise.
         prior_term: Optional scalar tensor with a precomputed prior
             contribution ``L_prior``. The trainer owns the parameters,
