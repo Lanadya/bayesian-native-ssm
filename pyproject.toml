@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bayesian-native-ssm"
+version = "0.0.1"
+description = "Credence-State Foundation Models — reference skeleton accompanying the SPRIND NFAI 2026 Stage-1 application."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Nina Klee", email = "nina.klee@arqon.group" }
+]
+keywords = ["state-space-models", "mamba", "rwkv", "bayesian-inference", "credence-state", "reliability"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "torch>=2.2",
+    "numpy>=1.26",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "scipy>=1.12",
+    "ruff>=0.4",
+]
+mamba = [
+    # Stage-1 integration target. Installed separately because mamba-ssm
+    # requires a CUDA toolchain; not all contributors have GPUs locally.
+    "mamba-ssm>=2.0",
+    "causal-conv1d>=1.2",
+]
+eval = [
+    # Stage-1 eval-pipeline dependencies. Stubbed in this skeleton.
+    "datasets>=2.18",
+    "transformers>=4.40",
+]
+
+[project.urls]
+Homepage = "https://github.com/lanadya/bayesian-native-ssm"
+Repository = "https://github.com/lanadya/bayesian-native-ssm"
+Issues = "https://github.com/lanadya/bayesian-native-ssm/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bayesian_native_ssm"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
