@@ -24,6 +24,19 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 
+# Whitelisted published RLHF baselines for Stage-1 comparison runs.
+# Stage-1 implementations of run_rlhf_baseline_comparison MUST reject
+# unknown names here BEFORE doing any other work — this enforces, as a
+# code-level invariant rather than a docstring promise, that no ad-hoc
+# self-trained RLHF baseline can be used as a comparator. Extending the
+# whitelist is an explicit design decision, not an implementation
+# convenience.
+_ALLOWED_RLHF_BASELINES: frozenset[str] = frozenset({
+    "pythia-160m-tulu-3",
+    "tinyllama-1.1b-chat-v1.0",
+})
+
+
 @dataclass
 class BenchmarkResult:
     """Uniform return shape across benchmark wrappers."""
@@ -78,14 +91,22 @@ def run_rlhf_baseline_comparison(
     """Side-by-side comparison against a *published* RLHF baseline.
 
     The ``rlhf_baseline_name`` argument MUST refer to a peer-reviewed or
-    publicly-released model with documented RLHF training (e.g.
-    ``"pythia-160m-tulu-3"``, ``"tinyllama-1.1b-chat-v1.0"``). The
-    Stage-1 implementation rejects ad-hoc self-trained RLHF baselines
-    here to forestall the "your RLHF baseline was tuned badly" review
-    objection.
+    publicly-released model from :data:`_ALLOWED_RLHF_BASELINES`. The
+    whitelist is enforced as a code-level invariant (not only in this
+    docstring) to forestall the "your RLHF baseline was tuned badly"
+    review objection: even after the Stage-1 implementation lands, an
+    unknown ``rlhf_baseline_name`` raises ``ValueError`` before any
+    benchmark code runs.
     """
+    if rlhf_baseline_name not in _ALLOWED_RLHF_BASELINES:
+        raise ValueError(
+            f"RLHF baseline {rlhf_baseline_name!r} is not in the Stage-1 "
+            f"whitelist {sorted(_ALLOWED_RLHF_BASELINES)}. Ad-hoc self-trained "
+            f"RLHF baselines are deliberately rejected; extending the whitelist "
+            f"is an explicit design decision, not an implementation convenience."
+        )
     raise NotImplementedError(
-        "RLHF baseline comparison is Stage-1 work. The Stage-1 baseline list "
-        "is fixed to published RLHF models (Pythia-160M + Tülu-3, "
-        "TinyLlama-1.1B-Chat) — no self-trained RLHF baselines."
+        "RLHF baseline comparison body is Stage-1 work. The Stage-1 baseline "
+        "list is fixed to the published RLHF models in _ALLOWED_RLHF_BASELINES; "
+        "the whitelist check above is enforced regardless of implementation status."
     )
